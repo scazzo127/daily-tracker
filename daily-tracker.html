@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daily">
+<meta name="theme-color" content="#10241c">
+<title>Daily Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f5f7f3;
+    --card:#ffffff;
+    --ink:#13231c;
+    --ink-soft:#5a6b62;
+    --line:#e4e8e2;
+    --green:#1f7a5c;
+    --green-bright:#2fb37e;
+    --green-wash:#e8f4ee;
+    --amber:#d99a31;
+    --shadow:0 1px 2px rgba(19,35,28,.04),0 8px 24px rgba(19,35,28,.06);
+    --display:"Bricolage Grotesque",-apple-system,system-ui,sans-serif;
+    --body:"Inter",-apple-system,system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--body);
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.45;
+    padding:max(env(safe-area-inset-top),14px) 14px calc(env(safe-area-inset-bottom) + 30px);
+    max-width:520px;margin:0 auto;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* Header */
+  header{display:flex;align-items:flex-end;justify-content:space-between;padding:6px 4px 16px;}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;}
+  .date{font-family:var(--display);font-weight:700;font-size:30px;line-height:1.04;letter-spacing:-.01em;margin-top:2px;}
+  .streak{
+    text-align:right;font-family:var(--mono);font-weight:700;
+    background:var(--green-wash);color:var(--green);
+    border-radius:14px;padding:8px 12px;font-size:13px;white-space:nowrap;
+  }
+  .streak b{font-size:19px;display:block;line-height:1;}
+
+  /* Cards */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:18px;margin-bottom:14px;}
+  .card-label{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-bottom:12px;}
+
+  /* Today's movement */
+  .move{position:relative;overflow:hidden;}
+  .move .kind{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--green);}
+  .move h2{font-family:var(--display);font-weight:700;font-size:23px;line-height:1.12;letter-spacing:-.01em;margin:6px 0 16px;max-width:78%;}
+  .move .detail{font-size:13px;color:var(--ink-soft);line-height:1.5;margin:-8px 0 16px;}
+  .move .detail:empty{display:none;}
+  .move.rest .kind{color:var(--ink-soft);}
+  .do-btn{
+    width:100%;border:none;border-radius:14px;padding:15px;font-family:var(--body);
+    font-size:16px;font-weight:600;cursor:pointer;transition:transform .12s,background .2s,color .2s;
+    background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;gap:9px;
+  }
+  .do-btn:active{transform:scale(.985);}
+  .do-btn.done{background:var(--green-wash);color:var(--green);}
+  .do-btn .tick{width:20px;height:20px;border-radius:50%;border:2px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font-size:12px;}
+  .do-btn.done .tick{background:var(--green);border-color:var(--green);color:#fff;}
+
+  /* Checklist rows */
+  .row{
+    display:flex;align-items:center;gap:13px;padding:13px 2px;cursor:pointer;
+    border-top:1px solid var(--line);
+  }
+  .row:first-of-type{border-top:none;}
+  .box{
+    flex:0 0 24px;height:24px;border-radius:8px;border:2px solid var(--line);
+    display:flex;align-items:center;justify-content:center;transition:.18s;color:#fff;font-size:14px;
+  }
+  .row.on .box{background:var(--green);border-color:var(--green);}
+  .row .txt{flex:1;font-size:15px;font-weight:500;}
+  .row.on .txt{color:var(--ink-soft);}
+  .row .meta{font-family:var(--mono);font-size:12px;color:var(--ink-soft);font-weight:500;}
+
+  /* Protein slider meter */
+  .meter-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;}
+  .meter-val{font-family:var(--mono);font-weight:700;font-size:26px;letter-spacing:-.02em;}
+  .meter-val .unit{font-size:13px;color:var(--ink-soft);font-weight:500;margin-left:2px;}
+  .meter-target{font-family:var(--mono);font-size:12px;color:var(--ink-soft);}
+
+  .slider-wrap{position:relative;padding:4px 0;}
+  /* range reset */
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;margin:0;cursor:pointer;}
+  input[type=range]:focus{outline:none;}
+  /* track */
+  input[type=range]::-webkit-slider-runnable-track{height:14px;border-radius:99px;border:1px solid var(--line);
+    background:linear-gradient(90deg,var(--fillcol,var(--green-bright)) var(--pct,0%),var(--paper) var(--pct,0%));}
+  input[type=range]::-moz-range-track{height:14px;border-radius:99px;border:1px solid var(--line);background:var(--paper);}
+  input[type=range]::-moz-range-progress{height:14px;border-radius:99px;background:var(--fillcol,var(--green-bright));}
+  /* thumb */
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:30px;height:30px;border-radius:50%;
+    background:#fff;border:3px solid var(--green);box-shadow:0 2px 6px rgba(19,35,28,.18);margin-top:-9px;transition:border-color .2s;}
+  input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid var(--green);box-shadow:0 2px 6px rgba(19,35,28,.18);}
+  input[type=range]:active::-webkit-slider-thumb{transform:scale(1.08);}
+
+  .scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-top:10px;padding:0 2px;}
+  .scale .tgt{color:var(--green);font-weight:700;}
+  .zone-note{font-size:13px;margin-top:11px;font-weight:500;min-height:1.2em;}
+
+  /* Week strip */
+  .week{display:flex;justify-content:space-between;gap:6px;margin-top:4px;}
+  .day{flex:1;text-align:center;}
+  .day .dl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-bottom:7px;}
+  .dot{width:30px;height:30px;border-radius:50%;margin:0 auto;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink-soft);transition:.2s;}
+  .dot.full{background:var(--green);border-color:var(--green);color:#fff;}
+  .dot.part{border-color:var(--green-bright);color:var(--green);}
+  .dot.today{box-shadow:0 0 0 3px var(--green-wash);}
+
+  .foot{text-align:center;margin-top:18px;}
+  .reset{background:none;border:none;color:var(--ink-soft);font-family:var(--body);font-size:13px;font-weight:500;text-decoration:underline;cursor:pointer;padding:8px;}
+  .tip{font-size:12px;color:var(--ink-soft);text-align:center;margin-top:10px;line-height:1.5;padding:0 10px;}
+
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="eyebrow" id="eyebrow">Today</div>
+    <div class="date" id="dateLine">—</div>
+  </div>
+  <div class="streak"><b id="streakNum">0</b>day streak</div>
+</header>
+
+<!-- Today's movement -->
+<div class="card move" id="moveCard">
+  <div class="kind" id="moveKind">Movement</div>
+  <h2 id="moveTitle">—</h2>
+  <div class="detail" id="moveDetail"></div>
+  <button class="do-btn" id="moveBtn" onclick="toggleMove()">
+    <span class="tick" id="moveTick"></span>
+    <span id="moveBtnTxt">Mark done</span>
+  </button>
+</div>
+
+<!-- Daily checklist -->
+<div class="card">
+  <div class="card-label">Daily check-ins</div>
+  <div id="checklist"></div>
+</div>
+
+<!-- Protein -->
+<div class="card">
+  <div class="card-label">Protein</div>
+  <div class="meter-top">
+    <div class="meter-val"><span id="proteinVal">0</span><span class="unit">g</span></div>
+    <div class="meter-target">target 110–130 g</div>
+  </div>
+  <div class="slider-wrap">
+    <input type="range" id="proteinSlider" min="0" max="150" step="5" value="0"
+           oninput="onProteinInput(this.value)" onchange="onProteinCommit(this.value)">
+  </div>
+  <div class="scale"><span>0</span><span class="tgt">110–130</span><span>150</span></div>
+  <div class="zone-note" id="proteinNote"></div>
+</div>
+
+<!-- Week -->
+<div class="card">
+  <div class="card-label">This week</div>
+  <div class="week" id="weekStrip"></div>
+</div>
+
+<div class="foot">
+  <button class="reset" onclick="resetDay()">Reset today</button>
+  <div class="tip">Saves automatically on this device. On iPhone: Share → Add to Home Screen to use it like an app.</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY = "tomDailyTracker_v1";
+
+  // Day-of-week plan (0=Sun ... 6=Sat)
+  var PLAN = [
+    {kind:"Recovery",  title:"Rest or light stretch", rest:true,  stretch:true},
+    {kind:"Strength",  title:"Strength — full body + 10-min stretch", stretch:true,
+     detail:"(goblet squats, Romanian deadlifts, lunges, push-ups/bench press, overhead press, rows, biceps curls, triceps extensions, plank)"},
+    {kind:"Cardio",    title:"Easy walk, 30–45 min"},
+    {kind:"Mobility",  title:"Peloton Yoga, 20–30 min"},
+    {kind:"Strength",  title:"Strength — full body + 10-min stretch", stretch:true,
+     detail:"(goblet squats, Romanian deadlifts, lunges, push-ups/bench press, overhead press, rows, biceps curls, triceps extensions, plank)"},
+    {kind:"VO2 max",   title:"Peloton HIIT / Tabata ride"},
+    {kind:"Cardio",    title:"Long walk or hike"}
+  ];
+
+  function todayKey(d){ d = d||new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+  function load(){
+    try{ var raw = localStorage.getItem(KEY); return raw? JSON.parse(raw):{}; }
+    catch(e){ return {}; }
+  }
+  function save(store){
+    try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){}
+  }
+
+  function blankDay(dow){
+    var checks = {podcast:false, shake:false, meds:false, whitening:false, retainers:false};
+    if(PLAN[dow].stretch) checks.stretch = false;
+    return {move:false, protein:0, checks:checks};
+  }
+
+  var store = load();
+  var key = todayKey();
+  var dow = new Date().getDay();
+  if(!store[key]) store[key] = blankDay(dow);
+  var day = store[key];
+  // backfill any missing keys for forward/backward compatibility
+  var fresh = blankDay(dow);
+  if(day.checks==null) day.checks = {};
+  for(var c in fresh.checks){ if(!(c in day.checks)) day.checks[c]=false; }
+  if(typeof day.protein!=="number") day.protein=0;
+  if(typeof day.move!=="boolean") day.move=false;
+
+  function persist(){ store[key]=day; save(store); render(); }
+
+  // ---- actions (exposed globally) ----
+  window.toggleMove = function(){ day.move = !day.move; persist(); };
+  window.toggleCheck = function(name){ day.checks[name] = !day.checks[name]; persist(); };
+  // protein slider: paint live while dragging, save on release
+  window.onProteinInput = function(v){ day.protein = parseInt(v,10)||0; paintProtein(); };
+  window.onProteinCommit = function(v){ day.protein = parseInt(v,10)||0; persist(); };
+  window.resetDay = function(){
+    if(confirm("Clear today's progress?")){ store[key]=blankDay(new Date().getDay()); day=store[key]; persist(); }
+  };
+
+  // ---- completion + streak ----
+  function dayComplete(dRec){
+    if(!dRec) return 0;
+    var done=0, total=0;
+    total++; if(dRec.move) done++;
+    total++; if(dRec.protein>=110) done++;
+    if(dRec.checks){ for(var k in dRec.checks){ if(OPTIONAL[k]) continue; total++; if(dRec.checks[k]) done++; } }
+    return total? done/total : 0;
+  }
+  function computeStreak(){
+    var n=0; var d=new Date();
+    for(var i=0;i<400;i++){
+      var k=todayKey(d); var rec=store[k];
+      var ratio = rec? dayComplete(rec):0;
+      if(ratio>=0.6){ n++; }
+      else if(i===0){ /* today not done yet — don't break the streak */ }
+      else { break; }
+      d.setDate(d.getDate()-1);
+    }
+    return n;
+  }
+
+  var CHECK_DEFS = {
+    podcast:   {label:"Listen to podcast", meta:""},
+    stretch:   {label:"Post-workout stretch", meta:"10 min"},
+    shake:     {label:"Afternoon protein shake", meta:""},
+    meds:      {label:"Meds & supplements", meta:"daily"},
+    whitening: {label:"Teeth whitening", meta:"optional"},
+    retainers: {label:"Retainers", meta:"nightly"}
+  };
+  var CHECK_ORDER = ["podcast","stretch","shake","meds","whitening","retainers"];
+  // Optional check-ins still log, but don't count toward completion / streak
+  var OPTIONAL = {whitening:true};
+
+  // ---- protein paint (no DOM rebuild; safe to call during drag) ----
+  function proteinColor(v){
+    if(v===0) return "var(--line)";
+    if(v<110)  return "var(--amber)";
+    return "var(--green-bright)";
+  }
+  function paintProtein(){
+    var v = day.protein;
+    document.getElementById("proteinVal").textContent = v;
+    var slider = document.getElementById("proteinSlider");
+    var pct = Math.round(v/150*100);
+    var col = proteinColor(v);
+    slider.style.setProperty("--pct", pct+"%");
+    slider.style.setProperty("--fillcol", col);
+    var note = document.getElementById("proteinNote");
+    if(v===0){ note.textContent=""; note.style.color="var(--ink-soft)"; }
+    else if(v<110){ note.textContent=(110-v)+" g to reach your range."; note.style.color="var(--amber)"; }
+    else if(v<=130){ note.textContent="In range — great for holding muscle."; note.style.color="var(--green)"; }
+    else { note.textContent="Above range — totally fine."; note.style.color="var(--green)"; }
+  }
+
+  // ---- full render ----
+  function render(){
+    var now = new Date();
+    document.getElementById("eyebrow").textContent = now.toLocaleDateString(undefined,{weekday:"long"});
+    document.getElementById("dateLine").textContent = now.toLocaleDateString(undefined,{month:"long",day:"numeric"});
+
+    // movement
+    var p = PLAN[now.getDay()];
+    var card = document.getElementById("moveCard");
+    card.classList.toggle("rest", !!p.rest);
+    document.getElementById("moveKind").textContent = p.kind;
+    document.getElementById("moveTitle").textContent = p.title;
+    document.getElementById("moveDetail").textContent = p.detail || "";
+    var btn = document.getElementById("moveBtn");
+    btn.classList.toggle("done", day.move);
+    document.getElementById("moveTick").innerHTML = day.move? "&#10003;":"";
+    document.getElementById("moveBtnTxt").textContent = day.move? (p.rest?"Logged":"Done"):(p.rest?"Mark complete":"Mark done");
+
+    // checklist
+    var cl = document.getElementById("checklist"); cl.innerHTML="";
+    CHECK_ORDER.forEach(function(name){
+      if(!(name in day.checks)) return;
+      var def = CHECK_DEFS[name];
+      var row = document.createElement("div");
+      row.className = "row" + (day.checks[name]?" on":"");
+      row.onclick = function(){ toggleCheck(name); };
+      row.innerHTML =
+        '<div class="box">'+(day.checks[name]?"&#10003;":"")+'</div>'+
+        '<div class="txt">'+def.label+'</div>'+
+        (def.meta?'<div class="meta">'+def.meta+'</div>':'');
+      cl.appendChild(row);
+    });
+
+    // protein
+    document.getElementById("proteinSlider").value = day.protein;
+    paintProtein();
+
+    // streak
+    document.getElementById("streakNum").textContent = computeStreak();
+
+    // week strip (Mon–Sun of current week)
+    var ws = document.getElementById("weekStrip"); ws.innerHTML="";
+    var labels=["M","T","W","T","F","S","S"];
+    var base = new Date();
+    var offsetToMon = (base.getDay()+6)%7;
+    var monday = new Date(base); monday.setDate(base.getDate()-offsetToMon);
+    for(var i=0;i<7;i++){
+      var dd = new Date(monday); dd.setDate(monday.getDate()+i);
+      var k = todayKey(dd);
+      var rec = store[k];
+      var ratio = rec? dayComplete(rec):0;
+      var isToday = k===todayKey(new Date());
+      var cls = "dot"; if(ratio>=0.85) cls+=" full"; else if(ratio>=0.3) cls+=" part";
+      if(isToday) cls+=" today";
+      var inner = ratio>=0.85? "&#10003;" : dd.getDate();
+      var col = document.createElement("div");
+      col.className="day";
+      col.innerHTML = '<div class="dl">'+labels[i]+'</div><div class="'+cls+'">'+inner+'</div>';
+      ws.appendChild(col);
+    }
+  }
+
+  // handle day rollover if the page stays open past midnight
+  function checkRollover(){
+    var k = todayKey();
+    if(k!==key){ key=k; if(!store[key]) store[key]=blankDay(new Date().getDay()); day=store[key]; render(); }
+  }
+  setInterval(checkRollover, 60000);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) checkRollover(); });
+
+  render();
+})();
+</script>
+</body>
+</html>
